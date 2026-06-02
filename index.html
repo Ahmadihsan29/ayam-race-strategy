@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ayam Race Strategy Pro 🏎️</title>
+    <title>Ayam Race Strategy Pro v2.6 🏎️</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -12,6 +12,8 @@
         .pit-marker { width: 4px; height: 32px; background: #fbbf24; margin-top: -4px; position: absolute; z-index: 10; }
         .tooltip { visibility: hidden; position: absolute; background: #1f2937; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; transform: translateY(-120%); white-space: nowrap; }
         .stint-segment:hover .tooltip { visibility: visible; }
+        .game-card { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .game-card.active { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.1); transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2); }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200 min-h-screen p-4 md:p-8">
@@ -19,17 +21,29 @@
         <!-- Header -->
         <div class="flex flex-col md:flex-row justify-between items-center bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-xl gap-4">
             <div>
-                <h1 class="text-3xl font-bold text-blue-400">🏎️ Ayam Race Strategy <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded ml-2 uppercase tracking-widest">v2.5 ULTIMATE</span></h1>
-                <p class="text-slate-400 text-sm mt-1">Endurance Fuel & Stint Planner for ACC / iRacing / LMU</p>
+                <h1 class="text-3xl font-bold text-blue-400">🏎️ Ayam Race Strategy <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded ml-2 uppercase tracking-widest">v2.6 ONLINE</span></h1>
+                <p class="text-slate-400 text-sm mt-1">Multi-Sim Endurance Fuel & Stint Planner</p>
             </div>
             <div class="flex gap-2">
                 <button onclick="window.print()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold transition-all">Print PDF</button>
-                <select id="mainUnit" onchange="calculate()" class="bg-blue-500/10 border border-blue-500/30 px-4 py-2 rounded-lg font-bold text-blue-300 outline-none cursor-pointer hover:bg-blue-500/20 transition-all appearance-none">
-                    <option value="L" class="bg-slate-800">Fuel (Liters)</option>
-                    <option value="kWh" class="bg-slate-800">Kilowatt-hour (kWh)</option>
-                    <option value="MJ" class="bg-slate-800">Megajoules (MJ)</option>
-                    <option value="%" class="bg-slate-800">Percentage (%)</option>
-                </select>
+            </div>
+        </div>
+
+        <!-- Game Selection Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div id="card-acc" onclick="switchGame('acc')" class="game-card active bg-slate-800 p-6 rounded-2xl border-2 border-slate-700 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-100">Assetto Corsa Competizione</h3>
+                    <p class="text-slate-500 text-xs">Standard GT3/GT4 Fuel Management (Liters)</p>
+                </div>
+                <div class="text-3xl">🇮🇹</div>
+            </div>
+            <div id="card-lmu" onclick="switchGame('lmu')" class="game-card bg-slate-800 p-6 rounded-2xl border-2 border-slate-700 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-100">Le Mans Ultimate</h3>
+                    <p class="text-slate-500 text-xs">WEC Virtual Energy Management (MJ / %)</p>
+                </div>
+                <div class="text-3xl">🇫🇷</div>
             </div>
         </div>
 
@@ -43,81 +57,24 @@
                     </h2>
                     <div class="grid grid-cols-2 gap-4">
                         <div class="col-span-2">
-                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pilih Sirkuit (LMU)</label>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Satuan Utama</label>
+                            <select id="mainUnit" onchange="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 outline-none text-sm font-bold text-blue-400">
+                                <option value="L">Liters (L)</option>
+                                <option value="%" selected>Percentage (%)</option>
+                                <option value="MJ">Megajoules (MJ)</option>
+                                <option value="kWh">Kilowatt-hour (kWh)</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label id="trackLabel" class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pilih Sirkuit</label>
                             <select id="trackPreset" onchange="applyTrackPreset()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none text-sm">
-                                <option value="custom">-- Custom / Others --</option>
-                                <option value="lemans" data-time-min="3" data-time-sec="28" data-cons="3.4">Le Mans (Sarthe)</option>
-                                <option value="spa" data-time-min="2" data-time-sec="5" data-cons="3.2">Spa-Francorchamps</option>
-                                <option value="monza" data-time-min="1" data-time-sec="36" data-cons="3.1">Monza</option>
-                                <option value="fuji" data-time-min="1" data-time-sec="30" data-cons="2.9">Fuji Speedway</option>
-                                <option value="bahrain" data-time-min="1" data-time-sec="49" data-cons="3.3">Bahrain (Sakhir)</option>
-                                <option value="sebring" data-time-min="1" data-time-sec="47" data-cons="3.5">Sebring</option>
+                                <!-- Tracks injected by JS -->
                             </select>
                         </div>
                         <div class="col-span-2">
                             <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pilih Mobil (Preset)</label>
                             <select id="carPreset" onchange="applyPreset()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none text-sm">
-                                <option value="custom">-- Custom --</option>
-                                <optgroup label="GT3">
-                                    <option value="120">BMW M4 GT3 (120L)</option>
-                                    <option value="104">Ferrari 296 GT3 (104L)</option>
-                                    <option value="100">Porsche 992 GT3 R (100L)</option>
-                                    <option value="104">Lamborghini Huracan EVO2 (104L)</option>
-                                    <option value="120">Mercedes AMG GT3 EVO (120L)</option>
-                                    <option value="104">Audi R8 LMS EVO II (104L)</option>
-                                    <option value="110">McLaren 720S GT3 Evo (110L)</option>
-                                    <option value="132">Aston Martin Vantage GT3 (132L)</option>
-                                    <option value="120">Bentley Continental GT3 (120L)</option>
-                                    <option value="120">Lexus RC F GT3 (120L)</option>
-                                </optgroup>
-                                <optgroup label="GT4">
-                                    <option value="104">Alpine A110 GT4 (104L)</option>
-                                    <option value="120">Aston Martin Vantage GT4 (120L)</option>
-                                    <option value="110">BMW M4 GT4 (110L)</option>
-                                    <option value="110">Chevrolet Camaro GT4.R (110L)</option>
-                                    <option value="110">Ginetta G55 GT4 (110L)</option>
-                                    <option value="110">KTM X-Bow GT4 (110L)</option>
-                                    <option value="115">Maserati Granturismo MC GT4 (115L)</option>
-                                    <option value="110">McLaren 570S GT4 (110L)</option>
-                                    <option value="120">Mercedes AMG GT4 (120L)</option>
-                                    <option value="115">Porsche 718 Cayman GT4 RS (115L)</option>
-                                </optgroup>
-                                <optgroup label="LMP / Others">
-                                    <option value="75">LMP2 (75L)</option>
-                                    <option value="60">LMP3 (60L)</option>
-                                    <option value="100">GTE Cars (100L)</option>
-                                    <option value="55">Mazda MX-5 Cup (55L)</option>
-                                    <option value="110">LMDh / Hypercar (110L)</option>
-                                </optgroup>
-                                <optgroup label="Le Mans Ultimate (GT3 MJ)">
-                                    <option value="600">Aston Martin Vantage GT3</option>
-                                    <option value="600">BMW M4 GT3</option>
-                                    <option value="600">Ferrari 296 GT3</option>
-                                    <option value="600">Lamborghini Huracan EVO2</option>
-                                    <option value="600">McLaren 720S GT3 Evo</option>
-                                    <option value="600">Porsche 911 GT3 R</option>
-                                    <option value="600">Corvette Z06 GT3.R</option>
-                                    <option value="600">Lexus RC F GT3</option>
-                                    <option value="600">Ford Mustang GT3</option>
-                                </optgroup>
-                                <optgroup label="Le Mans Ultimate (LMH/LMDh MJ)">
-                                    <option value="908">Toyota GR010 Hybrid (908 MJ)</option>
-                                    <option value="902">Ferrari 499P (902 MJ)</option>
-                                    <option value="909">Porsche 963 LMDh (909 MJ)</option>
-                                    <option value="904">Cadillac V-Series.R (904 MJ)</option>
-                                    <option value="901">Peugeot 9X8 (901 MJ)</option>
-                                    <option value="920">BMW M Hybrid V8 (920 MJ)</option>
-                                    <option value="915">Lamborghini SC63 (915 MJ)</option>
-                                    <option value="912">Isotta Fraschini (912 MJ)</option>
-                                    <option value="905">Glickenhaus SCG 007 (905 MJ)</option>
-                                    <option value="903">Vanwall Vandervell 680 (903 MJ)</option>
-                                    <option value="910">Alpine A424 LMDh (910 MJ)</option>
-                                </optgroup>
-                                <optgroup label="LMU Battery Capacity (SoC Reference)">
-                                    <option value="4.5">Generic Hypercar Battery (4.5 kWh)</option>
-                                    <option value="3.5">LMH Supercap/Battery (3.5 kWh)</option>
-                                    <option value="5.0">LMDh Standard Battery (5.0 kWh)</option>
-                                </optgroup>
+                                <!-- Cars injected by JS -->
                             </select>
                         </div>
                         <div class="col-span-2">
@@ -263,11 +220,82 @@
         </div>
 
         <footer class="text-center py-8 text-slate-500 text-xs">
-            <p>Made with 💙 by Ayam | Race data cutoff: Jun 2026</p>
+            <p>Made with 💙 by Ayam | Race data v2.6 | Deployment: GitHub Pages</p>
         </footer>
     </div>
 
     <script>
+        let currentGame = 'acc';
+
+        const data = {
+            acc: {
+                tracks: [
+                    { id: 'custom', name: '-- Custom / Others --' },
+                    { id: 'monza', name: 'Monza', min: 1, sec: 47, cons: 3.5 },
+                    { id: 'spa', name: 'Spa-Francorchamps', min: 2, sec: 17, cons: 3.8 },
+                    { id: 'silverstone', name: 'Silverstone', min: 1, sec: 58, cons: 3.6 },
+                    { id: 'kyalami', name: 'Kyalami', min: 1, sec: 41, cons: 3.4 },
+                    { id: 'mountpanorama', name: 'Mount Panorama', min: 2, sec: 1, cons: 3.5 },
+                    { id: 'imola', name: 'Imola', min: 1, sec: 41, cons: 3.3 },
+                    { id: 'misano', name: 'Misano', min: 1, sec: 33, cons: 3.1 }
+                ],
+                cars: [
+                    { id: 'custom', name: '-- Custom --' },
+                    { id: '120', name: 'BMW M4 GT3 (120L)' },
+                    { id: '104', name: 'Ferrari 296 GT3 (104L)' },
+                    { id: '100', name: 'Porsche 992 GT3 R (100L)' },
+                    { id: '104', name: 'Lamborghini Huracan EVO2 (104L)' },
+                    { id: '120', name: 'Mercedes AMG GT3 EVO (120L)' },
+                    { id: '110', name: 'McLaren 720S GT3 Evo (110L)' },
+                    { id: '132', name: 'Aston Martin Vantage GT3 (132L)' }
+                ],
+                defaultUnit: 'L',
+                pitLoss: 30
+            },
+            lmu: {
+                tracks: [
+                    { id: 'custom', name: '-- Custom / Others --' },
+                    { id: 'lemans', name: 'Le Mans (Sarthe)', min: 3, sec: 28, cons: 3.4 },
+                    { id: 'spa', name: 'Spa-Francorchamps', min: 2, sec: 5, cons: 3.2 },
+                    { id: 'monza', name: 'Monza', min: 1, sec: 36, cons: 3.1 },
+                    { id: 'fuji', name: 'Fuji Speedway', min: 1, sec: 30, cons: 2.9 },
+                    { id: 'bahrain', name: 'Bahrain (Sakhir)', min: 1, sec: 49, cons: 3.3 },
+                    { id: 'sebring', name: 'Sebring', min: 1, sec: 47, cons: 3.5 },
+                    { id: 'cota', name: 'Circuit of the Americas', min: 1, sec: 51, cons: 3.2 },
+                    { id: 'interlagos', name: 'Interlagos', min: 1, sec: 24, cons: 2.8 }
+                ],
+                cars: [
+                    { id: 'custom', name: '-- Custom --' },
+                    { id: '908', name: 'Toyota GR010 Hybrid (908 MJ)', type: 'LMH' },
+                    { id: '902', name: 'Ferrari 499P (902 MJ)', type: 'LMH' },
+                    { id: '909', name: 'Porsche 963 (909 MJ)', type: 'LMDh' },
+                    { id: '904', name: 'Cadillac V-Series.R (904 MJ)', type: 'LMDh' },
+                    { id: '600', name: 'LMGT3 Generic (600 MJ)', type: 'GT3' },
+                    { id: '100', name: 'LMP2 Generic (100L/MJ)', type: 'LMP2' }
+                ],
+                defaultUnit: '%',
+                pitLoss: 65
+            }
+        };
+
+        function switchGame(game) {
+            currentGame = game;
+            document.querySelectorAll('.game-card').forEach(c => c.classList.remove('active'));
+            document.getElementById(`card-${game}`).classList.add('active');
+            
+            const trackSelect = document.getElementById('trackPreset');
+            const carSelect = document.getElementById('carPreset');
+            const mainUnit = document.getElementById('mainUnit');
+            
+            trackSelect.innerHTML = data[game].tracks.map(t => `<option value="${t.id}" data-min="${t.min||''}" data-sec="${t.sec||''}" data-cons="${t.cons||''}">${t.name}</option>`).join('');
+            carSelect.innerHTML = data[game].cars.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            
+            mainUnit.value = data[game].defaultUnit;
+            document.getElementById('pitTimeLoss').value = data[game].pitLoss;
+            
+            calculate();
+        }
+
         function formatTime(seconds) {
             const h = Math.floor(seconds / 3600);
             const m = Math.floor((seconds % 3600) / 60);
@@ -279,10 +307,9 @@
             const select = document.getElementById('trackPreset');
             const option = select.options[select.selectedIndex];
             if (select.value !== 'custom') {
-                document.getElementById('lapMin').value = option.dataset.timeMin;
-                document.getElementById('lapSec').value = option.dataset.timeSec;
+                document.getElementById('lapMin').value = option.dataset.min;
+                document.getElementById('lapSec').value = option.dataset.sec;
                 document.getElementById('fuelPerLap').value = option.dataset.cons;
-                document.getElementById('pitTimeLoss').value = 65; // Default LMU pit time
                 calculate();
             }
         }
@@ -290,18 +317,10 @@
         function applyPreset() {
             const preset = document.getElementById('carPreset').value;
             if (preset !== 'custom') {
-                const selectedOption = document.querySelector(`option[value="${preset}"]`);
-                const isLMU = selectedOption.parentElement.label.includes('Le Mans Ultimate');
-                
-                if (isLMU) {
-                    document.getElementById('mainUnit').value = '%';
-                    document.getElementById('tankCapacity').value = 100;
-                    if (document.getElementById('fuelPerLap').value == 3.5) {
-                        document.getElementById('fuelPerLap').value = 3.2; 
-                    }
-                } else {
-                    document.getElementById('mainUnit').value = 'L';
+                if (currentGame === 'acc') {
                     document.getElementById('tankCapacity').value = preset;
+                } else {
+                    document.getElementById('tankCapacity').value = (document.getElementById('mainUnit').value === '%') ? 100 : preset;
                 }
                 calculate();
             }
@@ -328,18 +347,15 @@
             if (unit === '%') {
                 tankInput.value = 100;
                 tankInput.readOnly = true;
-                tankInput.classList.add('opacity-50', 'cursor-not-allowed');
+                tankInput.classList.add('opacity-50');
             } else {
                 tankInput.readOnly = false;
-                tankInput.classList.remove('opacity-50', 'cursor-not-allowed');
+                tankInput.classList.remove('opacity-50');
             }
 
             document.querySelectorAll('.unit-label').forEach(el => el.innerText = unit);
             document.querySelectorAll('.unit-name').forEach(el => {
-                if (unit === 'L') el.innerText = 'Fuel';
-                else if (unit === '%') el.innerText = 'Virtual Energy';
-                else if (unit === 'MJ') el.innerText = 'Virtual Energy';
-                else el.innerText = 'Virtual Energy';
+                el.innerText = (unit === 'L') ? 'Fuel' : 'Energy';
             });
 
             const fuelPerLap = Math.max(0.01, fuelPerLapOriginal - fuelSaving);
@@ -347,14 +363,11 @@
             if (lapTime > 0 && fuelPerLap > 0) {
                 const effectiveTank = unit === '%' ? 100 : tankCapacity;
                 const lapsPerTank = Math.floor(effectiveTank / fuelPerLap);
-                
                 const estStops = Math.max(0, Math.ceil((durationSec / lapTime) / lapsPerTank) - 1);
                 const adjustedDurationSec = durationSec - (estStops * pitTimeLoss);
-                
                 const baseLaps = Math.ceil(adjustedDurationSec / lapTime);
                 const formationLaps = useFormation ? 1 : 0;
                 const totalLaps = baseLaps + formationLaps + extraLaps;
-                
                 const totalFuelNeeded = (totalLaps * fuelPerLap).toFixed(1);
                 const safeFuel = (parseFloat(totalFuelNeeded) + (fuelPerLap * 0.5)).toFixed(1);
                 
@@ -383,11 +396,9 @@
                 }
 
                 document.getElementById('totalStops').innerText = Math.max(0, stints.length - 1);
-
                 const tableBody = document.getElementById('stintTableBody');
                 const timelineContainer = document.getElementById('timelineContainer');
                 const timelineLabels = document.getElementById('timelineLabels');
-                
                 tableBody.innerHTML = '';
                 timelineContainer.innerHTML = '';
                 timelineLabels.innerHTML = '';
@@ -404,7 +415,6 @@
                     if (tyreStrategy === 'every') tyreAction = '<span class="text-blue-300">New 🛞</span>';
                     else if (tyreStrategy === 'double' && index % 2 === 0) tyreAction = '<span class="text-blue-300">New 🛞</span>';
                     else if (tyreStrategy === 'triple' && index % 3 === 0) tyreAction = '<span class="text-blue-300">New 🛞</span>';
-                    
                     if (index === 0) tyreAction = '<span class="text-slate-500">Start</span>';
                     
                     const row = document.createElement('tr');
@@ -442,18 +452,13 @@
                         marker.style.left = `${((elapsedLaps + stintLaps) / totalLaps) * 100}%`;
                         timelineContainer.appendChild(marker);
                     }
-
-                    const timeLabel = document.createElement('div');
-                    timeLabel.className = 'absolute text-[8px] text-slate-500 transform -translate-x-1/2';
-                    timeLabel.style.left = `${((elapsedLaps + stintLaps) / totalLaps) * 100}%`;
-                    timeLabel.innerText = isLast ? '' : Math.floor((elapsedLaps + stintLaps) * lapTime / 60) + 'm';
-                    timelineLabels.appendChild(timeLabel);
-
                     elapsedLaps += stintLaps;
                 });
             }
         }
-        calculate();
+        
+        // Initial load
+        switchGame('acc');
     </script>
 </body>
 </html>
