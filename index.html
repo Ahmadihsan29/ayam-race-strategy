@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayam Race Strategy Pro 🏎️</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; scroll-behavior: smooth; }
+        .stint-bar { height: 24px; transition: width 0.3s ease; }
+        .pit-marker { width: 4px; height: 32px; background: #fbbf24; margin-top: -4px; position: absolute; z-index: 10; }
+        .tooltip { visibility: hidden; position: absolute; background: #1f2937; color: white; padding: 4px 8px; border-radius: 4px; font-size: 10px; transform: translateY(-120%); white-space: nowrap; }
+        .stint-segment:hover .tooltip { visibility: visible; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-center bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-xl gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">🏎️ Ayam Race Strategy <span class="text-xs bg-blue-500/20 text-blue-300 px-2 py-1 rounded ml-2 uppercase tracking-widest">v2.5 ULTIMATE</span></h1>
+                <p class="text-slate-400 text-sm mt-1">Endurance Fuel & Stint Planner for ACC / iRacing / LMU</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="window.print()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-semibold transition-all">Print PDF</button>
+                <select id="mainUnit" onchange="calculate()" class="bg-blue-500/10 border border-blue-500/30 px-4 py-2 rounded-lg font-bold text-blue-300 outline-none cursor-pointer hover:bg-blue-500/20 transition-all appearance-none">
+                    <option value="L" class="bg-slate-800">Fuel (Liters)</option>
+                    <option value="kWh" class="bg-slate-800">Kilowatt-hour (kWh)</option>
+                    <option value="MJ" class="bg-slate-800">Megajoules (MJ)</option>
+                    <option value="%" class="bg-slate-800">Percentage (%)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Column: Inputs -->
+            <div class="lg:col-span-4 space-y-6">
+                <!-- Basic Race Config -->
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                        <span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> Konfigurasi Balapan
+                    </h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pilih Sirkuit (LMU)</label>
+                            <select id="trackPreset" onchange="applyTrackPreset()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none text-sm">
+                                <option value="custom">-- Custom / Others --</option>
+                                <option value="lemans" data-time-min="3" data-time-sec="28" data-cons="3.4">Le Mans (Sarthe)</option>
+                                <option value="spa" data-time-min="2" data-time-sec="5" data-cons="3.2">Spa-Francorchamps</option>
+                                <option value="monza" data-time-min="1" data-time-sec="36" data-cons="3.1">Monza</option>
+                                <option value="fuji" data-time-min="1" data-time-sec="30" data-cons="2.9">Fuji Speedway</option>
+                                <option value="bahrain" data-time-min="1" data-time-sec="49" data-cons="3.3">Bahrain (Sakhir)</option>
+                                <option value="sebring" data-time-min="1" data-time-sec="47" data-cons="3.5">Sebring</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Pilih Mobil (Preset)</label>
+                            <select id="carPreset" onchange="applyPreset()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none text-sm">
+                                <option value="custom">-- Custom --</option>
+                                <optgroup label="GT3">
+                                    <option value="120">BMW M4 GT3 (120L)</option>
+                                    <option value="104">Ferrari 296 GT3 (104L)</option>
+                                    <option value="100">Porsche 992 GT3 R (100L)</option>
+                                    <option value="104">Lamborghini Huracan EVO2 (104L)</option>
+                                    <option value="120">Mercedes AMG GT3 EVO (120L)</option>
+                                    <option value="104">Audi R8 LMS EVO II (104L)</option>
+                                    <option value="110">McLaren 720S GT3 Evo (110L)</option>
+                                    <option value="132">Aston Martin Vantage GT3 (132L)</option>
+                                    <option value="120">Bentley Continental GT3 (120L)</option>
+                                    <option value="120">Lexus RC F GT3 (120L)</option>
+                                </optgroup>
+                                <optgroup label="GT4">
+                                    <option value="104">Alpine A110 GT4 (104L)</option>
+                                    <option value="120">Aston Martin Vantage GT4 (120L)</option>
+                                    <option value="110">BMW M4 GT4 (110L)</option>
+                                    <option value="110">Chevrolet Camaro GT4.R (110L)</option>
+                                    <option value="110">Ginetta G55 GT4 (110L)</option>
+                                    <option value="110">KTM X-Bow GT4 (110L)</option>
+                                    <option value="115">Maserati Granturismo MC GT4 (115L)</option>
+                                    <option value="110">McLaren 570S GT4 (110L)</option>
+                                    <option value="120">Mercedes AMG GT4 (120L)</option>
+                                    <option value="115">Porsche 718 Cayman GT4 RS (115L)</option>
+                                </optgroup>
+                                <optgroup label="LMP / Others">
+                                    <option value="75">LMP2 (75L)</option>
+                                    <option value="60">LMP3 (60L)</option>
+                                    <option value="100">GTE Cars (100L)</option>
+                                    <option value="55">Mazda MX-5 Cup (55L)</option>
+                                    <option value="110">LMDh / Hypercar (110L)</option>
+                                </optgroup>
+                                <optgroup label="Le Mans Ultimate (GT3 MJ)">
+                                    <option value="600">Aston Martin Vantage GT3</option>
+                                    <option value="600">BMW M4 GT3</option>
+                                    <option value="600">Ferrari 296 GT3</option>
+                                    <option value="600">Lamborghini Huracan EVO2</option>
+                                    <option value="600">McLaren 720S GT3 Evo</option>
+                                    <option value="600">Porsche 911 GT3 R</option>
+                                    <option value="600">Corvette Z06 GT3.R</option>
+                                    <option value="600">Lexus RC F GT3</option>
+                                    <option value="600">Ford Mustang GT3</option>
+                                </optgroup>
+                                <optgroup label="Le Mans Ultimate (LMH/LMDh MJ)">
+                                    <option value="908">Toyota GR010 Hybrid (908 MJ)</option>
+                                    <option value="902">Ferrari 499P (902 MJ)</option>
+                                    <option value="909">Porsche 963 LMDh (909 MJ)</option>
+                                    <option value="904">Cadillac V-Series.R (904 MJ)</option>
+                                    <option value="901">Peugeot 9X8 (901 MJ)</option>
+                                    <option value="920">BMW M Hybrid V8 (920 MJ)</option>
+                                    <option value="915">Lamborghini SC63 (915 MJ)</option>
+                                    <option value="912">Isotta Fraschini (912 MJ)</option>
+                                    <option value="905">Glickenhaus SCG 007 (905 MJ)</option>
+                                    <option value="903">Vanwall Vandervell 680 (903 MJ)</option>
+                                    <option value="910">Alpine A424 LMDh (910 MJ)</option>
+                                </optgroup>
+                                <optgroup label="LMU Battery Capacity (SoC Reference)">
+                                    <option value="4.5">Generic Hypercar Battery (4.5 kWh)</option>
+                                    <option value="3.5">LMH Supercap/Battery (3.5 kWh)</option>
+                                    <option value="5.0">LMDh Standard Battery (5.0 kWh)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Strategi Ban</label>
+                            <select id="tyreStrategy" onchange="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none text-sm">
+                                <option value="every">Ganti Tiap Pit (Standard)</option>
+                                <option value="double">Ganti Tiap 2 Stint (Double Stint)</option>
+                                <option value="triple">Ganti Tiap 3 Stint (Triple Stint)</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Durasi Balapan (H:M)</label>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <input type="number" id="raceHour" oninput="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none transition-all" value="1" placeholder="Jam">
+                                    <span class="text-[9px] text-slate-600">Jam</span>
+                                </div>
+                                <div>
+                                    <input type="number" id="raceMin" oninput="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none transition-all" value="0" placeholder="Menit">
+                                    <span class="text-[9px] text-slate-600">Menit</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-span-2 grid grid-cols-2 gap-2">
+                            <div class="col-span-2">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Waktu Lap (M:S)</label>
+                            </div>
+                            <div>
+                                <input type="number" id="lapMin" oninput="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none" value="1" placeholder="Min">
+                                <span class="text-[9px] text-slate-600">Menit</span>
+                            </div>
+                            <div>
+                                <input type="number" id="lapSec" oninput="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none" value="45" step="0.1" placeholder="Detik">
+                                <span class="text-[9px] text-slate-600">Detik</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Konsumsi / Lap (<span class="unit-label">L</span>)</label>
+                            <input type="number" id="fuelPerLap" oninput="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none" value="3.5" step="0.01">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Kapasitas Maks (<span class="unit-label">L</span>)</label>
+                            <input type="number" id="tankCapacity" oninput="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none transition-all" value="100">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Safety Margin (Lap)</label>
+                            <input type="number" id="extraLaps" oninput="calculate()" class="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none" value="2">
+                        </div>
+                    </div>
+                    <div class="pt-2">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Estimasi Waktu Pit (Detik)</label>
+                        <input type="number" id="pitTimeLoss" oninput="calculate()" class="w-full p-2 rounded bg-slate-900 border border-slate-700 focus:border-blue-500 outline-none text-xs" value="60">
+                    </div>
+                </div>
+
+                <!-- Advanced Options -->
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-100 flex items-center gap-2">
+                        <span class="w-1.5 h-6 bg-emerald-500 rounded-full"></span> Opsi Lanjutan
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg">
+                            <span class="text-xs">Gunakan Formation Lap</span>
+                            <input type="checkbox" id="useFormation" onchange="calculate()" checked class="w-4 h-4 accent-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Saving Target (<span class="unit-label">L</span>)</label>
+                            <input type="number" id="fuelSaving" oninput="calculate()" class="w-full p-2 rounded bg-slate-900 border border-slate-700 focus:border-emerald-500 outline-none text-emerald-400 font-bold" value="0" step="0.05">
+                        </div>
+                        <div class="flex items-center justify-between p-2 bg-slate-900/50 rounded-lg">
+                            <span class="text-xs">Bagi Rata Stint (Equal Stints)</span>
+                            <input type="checkbox" id="equalStints" onchange="calculate()" checked class="w-4 h-4 accent-emerald-500">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Visuals & Results -->
+            <div class="lg:col-span-8 space-y-6">
+                <!-- Visual Timeline -->
+                <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-lg">
+                    <h2 class="text-lg font-semibold text-slate-100 mb-6 flex items-center gap-2">
+                        <span class="w-1.5 h-6 bg-yellow-500 rounded-full"></span> Visual Strategy Timeline
+                    </h2>
+                    <div class="relative pt-8 pb-4">
+                        <div class="absolute top-0 left-0 text-[10px] text-slate-500">START</div>
+                        <div class="absolute top-0 right-0 text-[10px] text-slate-500">FINISH</div>
+                        <div id="timelineContainer" class="w-full bg-slate-900 rounded-full flex items-center relative overflow-visible h-6">
+                            <!-- Stints and Pit markers injected here -->
+                        </div>
+                        <div id="timelineLabels" class="w-full relative h-6 mt-1">
+                            <!-- Time labels injected here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Summary Row -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+                        <p class="text-slate-500 text-[10px] uppercase font-bold">Total Lap</p>
+                        <p id="totalLaps" class="text-2xl font-bold text-blue-400">0</p>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+                        <p class="text-slate-500 text-[10px] uppercase font-bold text-nowrap">Total <span class="unit-name">Fuel</span></p>
+                        <p id="totalFuel" class="text-2xl font-bold text-green-400">0 <span class="unit-label">L</span></p>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 p-1 bg-yellow-500/20 text-yellow-300 text-[7px] font-bold uppercase tracking-widest rounded-bl">Safe</div>
+                        <p class="text-slate-500 text-[10px] uppercase font-bold text-nowrap">Safe <span class="unit-name">Fueling</span></p>
+                        <p id="safeFuel" class="text-2xl font-bold text-yellow-400">0 <span class="unit-label">L</span></p>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+                        <p class="text-slate-500 text-[10px] uppercase font-bold">Pit Stops</p>
+                        <p id="totalStops" class="text-2xl font-bold text-yellow-400">0</p>
+                    </div>
+                </div>
+
+                <!-- Stint Details Table -->
+                <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-lg overflow-hidden">
+                    <div class="p-6 border-b border-slate-700 flex justify-between items-center">
+                        <h3 class="text-lg font-semibold text-slate-100">Detail Strategi Stint</h3>
+                        <p id="lapsPerStintLabel" class="text-xs text-slate-500">Max: 0 Laps/Stint</p>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead class="bg-slate-900/50 text-slate-400 text-[10px] uppercase">
+                                <tr>
+                                    <th class="p-4">Stint</th>
+                                    <th class="p-4">Durasi Lap</th>
+                                    <th class="p-4">Refill Target (<span class="unit-label">L</span>)</th>
+                                    <th class="p-4">Ban</th>
+                                    <th class="p-4">Lama Waktu</th>
+                                    <th class="p-4">Window Pit</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stintTableBody" class="divide-y divide-slate-700">
+                                <!-- Rows injected here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center py-8 text-slate-500 text-xs">
+            <p>Made with 💙 by Ayam | Race data cutoff: Jun 2026</p>
+        </footer>
+    </div>
+
+    <script>
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            return h > 0 ? `${h}h ${m}m ${s}s` : `${m}m ${s}s`;
+        }
+
+        function applyTrackPreset() {
+            const select = document.getElementById('trackPreset');
+            const option = select.options[select.selectedIndex];
+            if (select.value !== 'custom') {
+                document.getElementById('lapMin').value = option.dataset.timeMin;
+                document.getElementById('lapSec').value = option.dataset.timeSec;
+                document.getElementById('fuelPerLap').value = option.dataset.cons;
+                document.getElementById('pitTimeLoss').value = 65; // Default LMU pit time
+                calculate();
+            }
+        }
+
+        function applyPreset() {
+            const preset = document.getElementById('carPreset').value;
+            if (preset !== 'custom') {
+                const selectedOption = document.querySelector(`option[value="${preset}"]`);
+                const isLMU = selectedOption.parentElement.label.includes('Le Mans Ultimate');
+                
+                if (isLMU) {
+                    document.getElementById('mainUnit').value = '%';
+                    document.getElementById('tankCapacity').value = 100;
+                    if (document.getElementById('fuelPerLap').value == 3.5) {
+                        document.getElementById('fuelPerLap').value = 3.2; 
+                    }
+                } else {
+                    document.getElementById('mainUnit').value = 'L';
+                    document.getElementById('tankCapacity').value = preset;
+                }
+                calculate();
+            }
+        }
+
+        function calculate() {
+            const raceHour = parseFloat(document.getElementById('raceHour').value) || 0;
+            const raceMin = parseFloat(document.getElementById('raceMin').value) || 0;
+            const durationSec = (raceHour * 3600) + (raceMin * 60);
+            const lapMin = parseFloat(document.getElementById('lapMin').value) || 0;
+            const lapSec = parseFloat(document.getElementById('lapSec').value) || 0;
+            const lapTime = (lapMin * 60) + lapSec;
+            const fuelPerLapOriginal = parseFloat(document.getElementById('fuelPerLap').value) || 0;
+            const fuelSaving = parseFloat(document.getElementById('fuelSaving').value) || 0;
+            const tankCapacity = parseFloat(document.getElementById('tankCapacity').value) || 0;
+            const extraLaps = parseFloat(document.getElementById('extraLaps').value) || 0;
+            const pitTimeLoss = parseFloat(document.getElementById('pitTimeLoss').value) || 0;
+            const useFormation = document.getElementById('useFormation').checked;
+            const unit = document.getElementById('mainUnit').value;
+            const tyreStrategy = document.getElementById('tyreStrategy').value;
+            const equalStints = document.getElementById('equalStints').checked;
+
+            const tankInput = document.getElementById('tankCapacity');
+            if (unit === '%') {
+                tankInput.value = 100;
+                tankInput.readOnly = true;
+                tankInput.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                tankInput.readOnly = false;
+                tankInput.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+
+            document.querySelectorAll('.unit-label').forEach(el => el.innerText = unit);
+            document.querySelectorAll('.unit-name').forEach(el => {
+                if (unit === 'L') el.innerText = 'Fuel';
+                else if (unit === '%') el.innerText = 'Virtual Energy';
+                else if (unit === 'MJ') el.innerText = 'Virtual Energy';
+                else el.innerText = 'Virtual Energy';
+            });
+
+            const fuelPerLap = Math.max(0.01, fuelPerLapOriginal - fuelSaving);
+
+            if (lapTime > 0 && fuelPerLap > 0) {
+                const effectiveTank = unit === '%' ? 100 : tankCapacity;
+                const lapsPerTank = Math.floor(effectiveTank / fuelPerLap);
+                
+                const estStops = Math.max(0, Math.ceil((durationSec / lapTime) / lapsPerTank) - 1);
+                const adjustedDurationSec = durationSec - (estStops * pitTimeLoss);
+                
+                const baseLaps = Math.ceil(adjustedDurationSec / lapTime);
+                const formationLaps = useFormation ? 1 : 0;
+                const totalLaps = baseLaps + formationLaps + extraLaps;
+                
+                const totalFuelNeeded = (totalLaps * fuelPerLap).toFixed(1);
+                const safeFuel = (parseFloat(totalFuelNeeded) + (fuelPerLap * 0.5)).toFixed(1);
+                
+                document.getElementById('totalLaps').innerText = totalLaps;
+                document.getElementById('totalFuel').innerText = totalFuelNeeded + " " + unit;
+                document.getElementById('safeFuel').innerText = safeFuel + " " + unit;
+                document.getElementById('lapsPerStintLabel').innerText = `Max: ${lapsPerTank} Laps/Stint`;
+
+                const stints = [];
+                let remainingLaps = totalLaps;
+                const numStints = Math.ceil(totalLaps / lapsPerTank);
+
+                if (equalStints && numStints > 1) {
+                    const avgLaps = Math.floor(totalLaps / numStints);
+                    let leftover = totalLaps % numStints;
+                    for (let i = 0; i < numStints; i++) {
+                        stints.push(avgLaps + (leftover > 0 ? 1 : 0));
+                        leftover--;
+                    }
+                } else {
+                    while (remainingLaps > 0) {
+                        const currentStintLaps = Math.min(remainingLaps, lapsPerTank);
+                        stints.push(currentStintLaps);
+                        remainingLaps -= currentStintLaps;
+                    }
+                }
+
+                document.getElementById('totalStops').innerText = Math.max(0, stints.length - 1);
+
+                const tableBody = document.getElementById('stintTableBody');
+                const timelineContainer = document.getElementById('timelineContainer');
+                const timelineLabels = document.getElementById('timelineLabels');
+                
+                tableBody.innerHTML = '';
+                timelineContainer.innerHTML = '';
+                timelineLabels.innerHTML = '';
+
+                let elapsedLaps = 0;
+                const colors = ['bg-blue-500', 'bg-indigo-500', 'bg-violet-500', 'bg-purple-500'];
+
+                stints.forEach((stintLaps, index) => {
+                    const stintDurationSec = stintLaps * lapTime;
+                    const stintPercent = (stintLaps / totalLaps) * 100;
+                    const isLast = index === stints.length - 1;
+                    
+                    let tyreAction = '<span class="text-slate-500">Keep</span>';
+                    if (tyreStrategy === 'every') tyreAction = '<span class="text-blue-300">New 🛞</span>';
+                    else if (tyreStrategy === 'double' && index % 2 === 0) tyreAction = '<span class="text-blue-300">New 🛞</span>';
+                    else if (tyreStrategy === 'triple' && index % 3 === 0) tyreAction = '<span class="text-blue-300">New 🛞</span>';
+                    
+                    if (index === 0) tyreAction = '<span class="text-slate-500">Start</span>';
+                    
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-700/20 transition-all text-sm";
+                    row.innerHTML = `
+                        <td class="p-4 font-bold text-blue-400">Stint ${index + 1}</td>
+                        <td class="p-4 text-slate-300">${stintLaps} Lap</td>
+                        <td class="p-4 text-emerald-400 font-mono font-bold">
+                            ${index === 0 ? '<span class="text-[9px] text-slate-500">INIT</span> 100%' : 
+                            (index === stints.length - 1 ? 
+                                (unit === '%' ? 
+                                    'Refill to <span class="text-yellow-400">' + Math.min(100, (stintLaps * fuelPerLap) + 1.5).toFixed(1) + ' %</span> <div class="text-[8px] text-yellow-500/50 uppercase tracking-tighter mt-1">Splash & Dash</div>' : 
+                                    'Add <span class="text-yellow-400">' + ((stintLaps * fuelPerLap) + (fuelPerLap * 0.5)).toFixed(1) + ' ' + unit + '</span> <div class="text-[8px] text-yellow-500/50 uppercase tracking-tighter mt-1">Splash & Dash</div>') :
+                                (unit === '%' ? 
+                                    'Refill to <span class="text-white">100%</span>' : 
+                                    'Refill <span class="text-white">Full</span> (+' + (stintLaps * fuelPerLap).toFixed(1) + ' ' + unit + ')'))}
+                        </td>
+                        <td class="p-4 text-[10px] font-bold uppercase tracking-wider">${tyreAction}</td>
+                        <td class="p-4 text-slate-300">${formatTime(stintDurationSec)}</td>
+                        <td class="p-4 text-yellow-400 font-medium">${isLast ? 'Finish 🏁' : 'Menit ' + Math.floor((elapsedLaps + stintLaps) * lapTime / 60)}</td>
+                    `;
+                    tableBody.appendChild(row);
+
+                    const segment = document.createElement('div');
+                    segment.className = `stint-segment ${colors[index % colors.length]} stint-bar relative cursor-pointer`;
+                    segment.style.width = `${stintPercent}%`;
+                    if (index === 0) segment.classList.add('rounded-l-full');
+                    if (isLast) segment.classList.add('rounded-r-full');
+                    segment.innerHTML = `<span class="tooltip">Stint ${index + 1}: ${stintLaps} Laps</span>`;
+                    timelineContainer.appendChild(segment);
+
+                    if (!isLast) {
+                        const marker = document.createElement('div');
+                        marker.className = 'pit-marker absolute top-0';
+                        marker.style.left = `${((elapsedLaps + stintLaps) / totalLaps) * 100}%`;
+                        timelineContainer.appendChild(marker);
+                    }
+
+                    const timeLabel = document.createElement('div');
+                    timeLabel.className = 'absolute text-[8px] text-slate-500 transform -translate-x-1/2';
+                    timeLabel.style.left = `${((elapsedLaps + stintLaps) / totalLaps) * 100}%`;
+                    timeLabel.innerText = isLast ? '' : Math.floor((elapsedLaps + stintLaps) * lapTime / 60) + 'm';
+                    timelineLabels.appendChild(timeLabel);
+
+                    elapsedLaps += stintLaps;
+                });
+            }
+        }
+        calculate();
+    </script>
+</body>
+</html>
