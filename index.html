@@ -14,6 +14,7 @@
         .stint-segment:hover .tooltip { visibility: visible; }
         .game-card { cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .game-card.active { border-color: #3b82f6; background-color: rgba(59, 130, 246, 0.1); transform: translateY(-4px); box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.2); }
+        .game-logo { height: 40px; filter: drop-shadow(0 0 8px rgba(255,255,255,0.2)); }
     </style>
 </head>
 <body class="bg-[#0f172a] text-slate-200 min-h-screen p-4 md:p-8">
@@ -31,19 +32,21 @@
 
         <!-- Game Selection Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div id="card-acc" onclick="switchGame('acc')" class="game-card active bg-slate-800 p-6 rounded-2xl border-2 border-slate-700 flex items-center justify-between">
-                <div>
+            <div id="card-acc" onclick="switchGame('acc')" class="game-card active bg-slate-800 p-6 rounded-2xl border-2 border-slate-700 flex items-center justify-between overflow-hidden relative">
+                <div class="z-10">
                     <h3 class="text-xl font-bold text-slate-100">Assetto Corsa Competizione</h3>
                     <p class="text-slate-500 text-xs">Standard GT3/GT4 Fuel Management (Liters)</p>
                 </div>
-                <div class="text-3xl">🇮🇹</div>
+                <img src="https://assettocorsa.gg/wp-content/uploads/2021/03/acc-logo.png" alt="ACC Logo" class="game-logo z-10 brightness-110">
+                <div class="absolute right-[-10%] opacity-10 text-6xl select-none">🇮🇹</div>
             </div>
-            <div id="card-lmu" onclick="switchGame('lmu')" class="game-card bg-slate-800 p-6 rounded-2xl border-2 border-slate-700 flex items-center justify-between">
-                <div>
+            <div id="card-lmu" onclick="switchGame('lmu')" class="game-card bg-slate-800 p-6 rounded-2xl border-2 border-slate-700 flex items-center justify-between overflow-hidden relative">
+                <div class="z-10">
                     <h3 class="text-xl font-bold text-slate-100">Le Mans Ultimate</h3>
                     <p class="text-slate-500 text-xs">WEC Virtual Energy Management (MJ / %)</p>
                 </div>
-                <div class="text-3xl">🇫🇷</div>
+                <img src="https://lemansultimate.com/wp-content/uploads/2023/12/logo-lmu.png" alt="LMU Logo" class="game-logo z-10 brightness-110">
+                <div class="absolute right-[-10%] opacity-10 text-6xl select-none">🇫🇷</div>
             </div>
         </div>
 
